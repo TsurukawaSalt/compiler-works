@@ -4,6 +4,8 @@
 
 using namespace std;
 
+//D:\\LAB\\Drh_Compiler\\SimpleLA\\input.cpp
+
 fstream inFile;
 char CHAR; // 当前字符
 char TOKEN[100]; // 当前字符串-->单词
