@@ -16,6 +16,11 @@ bool ISEOF(){
     return inFile.peek() == EOF;
 }
 
+string TOSTRING(){
+    string str = TOKEN;
+    return str.substr(0,num+1);
+}
+
 void GETCHAR(){ // 指针指向当前读的字符
     inFile.get(CHAR);
 }
@@ -47,9 +52,8 @@ bool ISDIGIT(){
 
 bool RESERVE(map<string, string> RESERVE_LIST){
     // TOKEN保存的字符串为保留字 返回true；为标识符，返回false
-    string str = TOKEN;
     map<string, string>::iterator iter;
-    iter = RESERVE_LIST.find(str);
+    iter = RESERVE_LIST.find(TOSTRING());
     if(iter!=RESERVE_LIST.end()){
         return true;
     } else {
@@ -122,13 +126,12 @@ int main(int argc, char *argv[]) {
                 UNGETCH(); // 多读了一位非字母数字的字符
             }
 
-            string str = TOKEN;
             if(RESERVE(RESERVE_LIST)){
                 map<string, string>::iterator iter;
-                iter = RESERVE_LIST.find(str);
+                iter = RESERVE_LIST.find(TOSTRING());
                 cout << iter->second << endl;
             } else {
-                cout << "Ident(" + str.substr(0,num+1) + ")" << endl;
+                cout << "Ident(" + TOSTRING() + ")" << endl;
             }
         }
         else if (ISDIGIT()){
