@@ -6,4 +6,4 @@ COPY ./* ./
 WORKDIR /SimpleLA/build
 RUN cmake ..
 RUN make -j4
-RUN chmod +x program
+RUN chmod +x SimpleLA
