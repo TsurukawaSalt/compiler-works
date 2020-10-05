@@ -1,5 +1,5 @@
 FROM gcc:10
 WORKDIR /SimpleLA/
 COPY ./* ./
-RUN gcc main.c -o main
+RUN gcc main.cpp -o main
 RUN chmod +x main
