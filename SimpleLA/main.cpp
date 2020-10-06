@@ -1,18 +1,18 @@
 #include <iostream> // 标准输入输出流
 #include <fstream> // 文件读取写入流
 #include <map>
+#include <string>
 
 using namespace std;
 
 //D:\\LAB\\Drh_Compiler\\SimpleLA\\input.cpp
 
-fstream inFile;
 char CHAR; // 当前字符
 char TOKEN[100]; // 当前字符串-->单词
-int num; // 记录当前单词TOKEN中字符max字符下标
-bool eof = false;
+int num; // 记录当前TOKEN的下标 字符数 count = num + 1
+bool eof = false; // true 表明文章读到末尾，无需 UNGETCH()
 
-bool ISEOF(){
+bool ISEOF(fstream &inFile){
     return inFile.peek() == EOF;
 }
 
@@ -21,20 +21,20 @@ string TOSTRING(){
     return str.substr(0,num+1);
 }
 
-void GETCHAR(){ // 指针指向当前读的字符
+void GETCHAR(fstream &inFile){ // 指针指向当前读的字符
     inFile.get(CHAR);
 }
 
-void UNGETCH(){ // 指针回退一格
+void UNGETCH(fstream &inFile){ // 指针回退一格
     inFile.seekg(-1, ios::cur);
 }
 
-void GETNBC(){ // 指针指向最后一个空格
-    GETCHAR();
+void GETNBC(fstream &inFile){ // 指针指向最后一个空格
+    GETCHAR(inFile);
     while (CHAR == ' '){
-        GETCHAR();
+        GETCHAR(inFile);
     }
-    UNGETCH();
+    UNGETCH(inFile);
 }
 
 void CAT(){
@@ -61,45 +61,95 @@ bool RESERVE(map<string, string> RESERVE_LIST){
     }
 }
 
-int ATOI(){
-    // 字符串-->数字
+int ATOI(){// 字符串-->数字
     string str = TOKEN;
-
     return stoi(str.substr(0,num+1));
 }
 
-void ERROR(){
-    // 出错处理
+void ERROR(){// 出错处理
+    cout << "Unknown" << endl;
 }
 
-bool ISPLUSSY(){
+bool ISPLUSSY(){// +
     return CHAR == '+';
-}// +
+}
 
-bool ISSTARSY(){
+bool ISSTARSY(){// *
     return CHAR == '*';
-}// *
+}
 
-bool ISCOMMASY(){
+bool ISCOMMASY(){// ,
     return CHAR == ',';
-}// ,
+}
 
-bool ISLPARSY(){
+bool ISLPARSY(){// (
     return CHAR == '(';
-}// (
+}
 
-bool ISRPARSY(){
+bool ISRPARSY(){// )
     return CHAR == ')';
-}// )
+}
 
-bool ISASSIGNSY(){
+bool ISASSIGNSY(){// =
     return CHAR == '=';
-}// =
+}
 
-bool ISCOLONSY(){
+bool ISCOLONSY(){// :
     return CHAR == ':';
-}// :
+}
 
+void LetterCase(fstream &inFile, map<string, string> RESERVE_LIST){
+    while(ISLETTER() || ISDIGIT()){
+        CAT();
+        if (ISEOF(inFile)){
+            eof = true;
+            break;
+        }
+        GETCHAR(inFile);
+    }
+    if (!eof){
+        eof = false;
+        UNGETCH(inFile); // 多读了一位非字母数字的字符
+    }
+
+    if(RESERVE(RESERVE_LIST)){
+        map<string, string>::iterator iter;
+        iter = RESERVE_LIST.find(TOSTRING());
+        cout << iter->second << endl;
+    } else {
+        cout << "Ident(" + TOSTRING() + ")" << endl;
+    }
+}
+
+void DigitCase(fstream &inFile){
+    while (ISDIGIT()){
+        CAT();
+        if (ISEOF(inFile)){
+            eof = true;
+            break;
+        }
+        GETCHAR(inFile);
+    }
+    if (!eof){
+        eof = false;
+        UNGETCH(inFile); // 多读了一位非字母数字的字符
+    }
+    cout << "Int(" + to_string(ATOI()) + ")" << endl;
+}
+
+void ColonCase(fstream &inFile){
+    if(!ISEOF(inFile)){
+        GETCHAR(inFile);
+        if(ISASSIGNSY()){
+            cout << "Assign" << endl;
+        }else {
+            UNGETCH(inFile);
+            cout << "Colon" << endl;
+        }
+    }else{
+        cout << "Colon" << endl;
+    }
+}
 
 int main(int argc, char *argv[]) {
     map<string, string> RESERVE_LIST = {{"BEGIN", "Begin"},
@@ -109,44 +159,16 @@ int main(int argc, char *argv[]) {
                                            {"THEN", "Then"},
                                            {"ELSE", "Else"}};
     char *filepath = argv[1];
+    fstream inFile;
     inFile.open(filepath);
-    while (!ISEOF()){
-        GETCHAR();
+    while (!ISEOF(inFile)){
+        GETCHAR(inFile);
         num = -1;
         if (ISLETTER()){
-            while(ISLETTER() || ISDIGIT()){
-                CAT();
-                if (ISEOF()){
-                    eof = true;
-                    break;
-                }
-                GETCHAR();
-            }
-            if (!eof){
-                UNGETCH(); // 多读了一位非字母数字的字符
-            }
-
-            if(RESERVE(RESERVE_LIST)){
-                map<string, string>::iterator iter;
-                iter = RESERVE_LIST.find(TOSTRING());
-                cout << iter->second << endl;
-            } else {
-                cout << "Ident(" + TOSTRING() + ")" << endl;
-            }
+            LetterCase(inFile, RESERVE_LIST);
         }
         else if (ISDIGIT()){
-            while (ISDIGIT()){
-                CAT();
-                if (ISEOF()){
-                    eof = true;
-                    break;
-                }
-                GETCHAR();
-            }
-            if (!eof){
-                UNGETCH(); // 多读了一位非字母数字的字符
-            }
-            cout << "Int(" + to_string(ATOI()) + ")" << endl;
+            DigitCase(inFile);
         }
         else if (ISPLUSSY()){
             cout << "Plus" << endl;
@@ -164,22 +186,13 @@ int main(int argc, char *argv[]) {
             cout << "RParenthesis" << endl;
         }
         else if (ISCOLONSY()){
-            if(!ISEOF()){
-                GETCHAR();
-                if(ISASSIGNSY()){
-                    cout << "Assign" << endl;
-                }else {
-                    UNGETCH();
-                    cout << "Colon" << endl;
-                }
-            }else{
-                cout << "Colon" << endl;
-            }
+            ColonCase(inFile);
         }
         else if (CHAR != ' ' && CHAR != '\r' && CHAR != '\n'){
-            cout << "Unknown" << endl;
+            ERROR();
             break;
         }
     }
+    inFile.close();
     return 0;
 }
