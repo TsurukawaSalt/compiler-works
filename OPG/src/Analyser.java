@@ -28,7 +28,7 @@ public class Analyser {
         analyser.getFirstVTAndLastVT();
         // 获得算符优先矩阵
         analyser.getTable();
-        analyser.printTable();
+//        analyser.printTable();
         // 分析
         analyser.analyse();
     }
