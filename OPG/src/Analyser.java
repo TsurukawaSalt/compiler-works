@@ -28,7 +28,7 @@ public class Analyser {
         analyser.getFirstVTAndLastVT();
         // 获得算符优先矩阵
         analyser.getTable();
-//        analyser.printTable();
+        analyser.printTable();
         // 分析
         analyser.analyse();
     }
@@ -328,6 +328,12 @@ public class Analyser {
                     break;
                 }
                 System.out.println("R");
+                if (!table.containsKey(opStack.get(topVT)+""+in)){
+                    // 无法比较
+                    System.out.println("E");
+                    err = true;
+                    break;
+                }
             }
             if (err){
                 break;
@@ -339,7 +345,7 @@ public class Analyser {
             // 移进
             if(!table.containsKey(opStack.get(topVT)+""+in)){
                 // 无法比较优先级,跳出循环，结束分析程序
-                System.out.println("RE");
+                System.out.println("E");
                 break;
             }else if (table.get(opStack.get(topVT)+""+in).equals('<') || table.get(opStack.get(topVT)+""+in).equals('=')){
                 // System.out.println("移进：");
