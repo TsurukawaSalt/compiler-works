@@ -28,6 +28,7 @@ public class Analyser {
         analyser.getFirstVTAndLastVT();
         // 获得算符优先矩阵
         analyser.getTable();
+//        analyser.printTable();
         // 分析
         analyser.analyse();
     }
@@ -69,6 +70,7 @@ public class Analyser {
                 }
             }
         }
+        VT.add('#');
     }
     public void getVN(){
         for(String s: Gram){
@@ -108,6 +110,7 @@ public class Analyser {
                 }
             }
         }
+
     }
     public void getLastVT(Character vn, Set<Character> lvt){
         // A -> ....a
@@ -176,33 +179,78 @@ public class Analyser {
             }
         }
         // 特别
-        // # < vt
-        // vt > #
-        for(char c: VT){
+        // E' -> #E#
+        // # < Fvt(E)
+        // Lvt(E) > #
+        // # = #
+        for(Character c: FirstVT.get('E')){
             table.put("#"+c, '<');
+        }
+        for(Character c: LastVT.get('E')){
             table.put(c+"#", '>');
         }
         table.put("##", '=');
     }
-//    public void printTable(){
-//        System.out.print("  ");
-//        for(Character c: VT){
-//            System.out.print(c + " ");
-//        }
-//        System.out.println("");
-//        for(Character c: VT){
-//            System.out.print(c+" ");
-//            for(Character d: VT){
-//                if(table.containsKey(c+""+d)){
-//                    char rtn = table.get(c+""+d);
-//                    System.out.print(rtn+" ");
-//                }else {
-//                    System.out.print("  ");
-//                }
-//            }
-//            System.out.println("");
-//        }
-//    }
+    public void printTable(){
+        System.out.print("  ");
+        for(Character c: VT){
+            System.out.print(c + " ");
+        }
+        System.out.println("");
+        for(Character c: VT){
+            System.out.print(c+" ");
+            for(Character d: VT){
+                if(table.containsKey(c+""+d)){
+                    char rtn = table.get(c+""+d);
+                    System.out.print(rtn+" ");
+                }else {
+                    System.out.print("  ");
+                }
+            }
+            System.out.println("");
+        }
+    }
+    public char getLeftPart(String right){
+        for(Map.Entry<Character, List<String>> map: production.entrySet()){
+            char left = map.getKey(); // 非终结符
+            for(String str: map.getValue()){
+                // right = F+F
+                // str   = T+F
+                // 算符优先算法跳过了单非终结符的规约，故可将非终结符看作一样的
+                if(str.length() == right.length()){
+                    int i=0;
+                    for(i=0; i<right.length(); i++){
+                        if(isVN(right.charAt(i)) && isVN(str.charAt(i))){
+
+                        }else if (isVT(right.charAt(i)) && isVT(str.charAt(i))){
+                            if (right.charAt(i) == str.charAt(i)){
+
+                            }else{
+                                break;
+                            }
+                        }else{
+                            break;
+                        }
+                    }
+                    if (i == right.length()){
+                        return left;
+                    }
+                }
+
+            }
+        }
+        return 0;
+    }
+    public boolean isEnd(List<Character> opStack, int top, int pos){
+        // opStack长度=2 topVT为# input.pos为#
+        int topVT;
+        if(isVN(opStack.get(top))){
+            topVT = top - 1;
+        }else {
+            topVT = top;
+        }
+        return opStack.get(topVT) == '#' && input.get(pos) == '#';
+    }
     public void analyse(){
         // 符号栈
         List<Character> opStack = new ArrayList<>();
@@ -215,38 +263,36 @@ public class Analyser {
 
         char in = input.get(pos);
         char c = opStack.get(top);
-//        int count = 0;
         boolean err = false;
-        while(!(opStack.size()==2 && isVN(opStack.get(top)) && in=='#')){
-//            count ++;
-//            if(count == 10){
-//                break;
-//            }
-            // print
-//            System.out.println("new round");
-//            System.out.println("op栈顶字符："+c);
-//            System.out.println("input栈顶：" + in);
-            if(isVT(c) || c == '#'){
-                topVT = top;
+        while(!isEnd(opStack, top, pos)){
+//            System.out.println("----new round----");
+//            System.out.println("op栈"+opStack);
+//            System.out.println("op栈顶->"+c);
+            // 获取终结符栈顶
+            if(isVN(c)){
+                topVT = top - 1;
             }else{
-                topVT = top-1;
+                topVT = top;
             }
 
+//            System.out.println("终结符栈顶->"+opStack.get(topVT));
+//            System.out.println("输入串->"+in);
             // 判断是否存在优先级
             if (!table.containsKey(opStack.get(topVT)+""+in)){
+                // 无法比较，输出 E，结束分析程序
                 System.out.println("E");
                 break;
             }
+
             // 归约
             while (table.get(opStack.get(topVT)+""+in).equals('>')){
-                // print
-//                System.out.println("归约：");
-                // 找到 ‘<'
-                if (opStack.size()==2  && isVN(opStack.get(top))&& in == '#'){
+//                 System.out.print("归约->");
+                if (isEnd(opStack, top, pos)){
                     break;
                 }
                 char tmp = 0;
 
+                // 找到 ‘<'
                 do {
                     tmp = opStack.get(topVT);
                     if(isVT(opStack.get(topVT-1)) || opStack.get(topVT-1) == '#'){
@@ -256,22 +302,27 @@ public class Analyser {
                     }
                 }while (!table.get(opStack.get(topVT)+""+tmp).equals('<'));
 
-                StringBuilder str = new StringBuilder();
                 // 得到素短语
+                StringBuilder str = new StringBuilder();
                 for(int i=topVT+1; i<opStack.size(); i++){
                     str.append(opStack.get(i));
                 }
-                // 修改opStack
-                for(int i=topVT+1; i<opStack.size(); i++){
-                    opStack.remove(topVT+1);
-                }
-
                 String rightPart = str.toString();
+
+                for (int i=top; i>topVT; i--){
+                    opStack.remove(i);
+                }
+//                System.out.println("");
+//                System.out.println("修改后的op栈"+opStack);
+//                System.out.print("试图归约->"+rightPart);
                 char left = getLeftPart(rightPart);
                 if(left!=0){
                     opStack.add(left);
+//                    System.out.println(" 规约成功-->"+left);
+//                    System.out.println("op栈"+opStack);
                     top = topVT + 1;
                 }else{
+                    // 归约失败，跳出归约循环
                     System.out.println("RE");
                     err = true;
                     break;
@@ -282,41 +333,25 @@ public class Analyser {
                 break;
             }
             // 判断是否结束
-            if(opStack.size() == 2 && isVN(opStack.get(top)) && in=='#'){
+            if(isEnd(opStack, top, pos)){
                 break;
             }
             // 移进
-            if(table.get(opStack.get(topVT)+""+in).equals('<') || table.get(opStack.get(topVT)+""+in).equals('=')){
-                //print
-//                System.out.println("移进：");
+            if(!table.containsKey(opStack.get(topVT)+""+in)){
+                // 无法比较优先级,跳出循环，结束分析程序
+                System.out.println("RE");
+                break;
+            }else if (table.get(opStack.get(topVT)+""+in).equals('<') || table.get(opStack.get(topVT)+""+in).equals('=')){
+                // System.out.println("移进：");
                 System.out.println("I"+in);
                 opStack.add(in);
-                pos++;
                 top++;
+                pos++;
                 c = opStack.get(top);
                 in = input.get(pos);
-            }else if(!table.get(opStack.get(topVT)+""+in).equals('>')){
-                System.out.println("RE");
-            }
-
-            // 判断是否结束
-            if(opStack.size() == 2 && isVN(opStack.get(top)) && in=='#'){
-                break;
-            }
-//            System.out.println("op栈顶字符："+c);
-//            System.out.println("input栈顶：" + in);
-        }
-
-    }
-    public char getLeftPart(String right){
-        for(Map.Entry<Character, List<String>> map: production.entrySet()){
-            char left = map.getKey(); // 非终结符
-            for(String str: map.getValue()){
-                if(right.equals(str)){
-                    return left;
-                }
+//                System.out.println("op栈"+opStack);
             }
         }
-        return 0;
+
     }
 }
