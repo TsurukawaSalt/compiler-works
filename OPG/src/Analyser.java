@@ -33,9 +33,12 @@ public class Analyser {
         analyser.analyse();
     }
     public void loadGram(){
-        Gram.add("E->E+T|T");
-        Gram.add("T->T*F|F");
-        Gram.add("F->(E)|i");
+        String[] gram = {
+                "E->E+T|T",
+                "T->T*F|F",
+                "F->(E)|i"
+        };
+        Collections.addAll(Gram, gram);
     }
     public void getProduction(){
         for (String s : Gram) {
@@ -156,9 +159,13 @@ public class Analyser {
                 char[] list = s.toCharArray();
                 for(int i=0; i< list.length-1; i++){
                     if(isVT(list[i]) && isVT(list[i+1])){
+                        // ac
+                        // a = c
                         table.put(list[i]+""+list[i+1], '=');
                     }
                     if(i<= list.length-3 && isVT(list[i]) && isVN(list[i+1]) && isVT(list[i+2])){
+                        // aBc
+                        // a = c
                         table.put(list[i]+""+list[i+2], '=');
                     }
                     if(isVT(list[i]) && isVN(list[i+1])){
@@ -218,17 +225,24 @@ public class Analyser {
                 // str   = T+F
                 // 算符优先算法跳过了单非终结符的规约，故可将非终结符看作一样的
                 if(str.length() == right.length()){
-                    int i=0;
+                    int i;
                     for(i=0; i<right.length(); i++){
-                        if(isVN(right.charAt(i)) && isVN(str.charAt(i))){
-
-                        }else if (isVT(right.charAt(i)) && isVT(str.charAt(i))){
-                            if (right.charAt(i) == str.charAt(i)){
-
-                            }else{
+//                        if(isVN(right.charAt(i)) && isVN(str.charAt(i))){
+//
+//                        }else if (isVT(right.charAt(i)) && isVT(str.charAt(i))){
+//                            if (right.charAt(i) == str.charAt(i)){
+//
+//                            }else{
+//                                break;
+//                            }
+//                        }else{
+//                            break;
+//                        }
+                        if (isVT(right.charAt(i)) && isVT(str.charAt(i))){
+                            if (right.charAt(i) != str.charAt(i)){
                                 break;
                             }
-                        }else{
+                        }else if(!(isVN(right.charAt(i)) && isVN(str.charAt(i)))){
                             break;
                         }
                     }
